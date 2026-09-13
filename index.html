@@ -709,23 +709,13 @@
         </div>
     </div>
 
-   <!-- Import Firebase SDK v9+ -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-        getFirestore, 
-        collection, 
-        onSnapshot, 
-        doc, 
-        setDoc, 
-        addDoc, 
-        updateDoc, 
-        deleteDoc, 
-        runTransaction 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+   <!-- Load Firebase SDK v8 (Global Object) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
+<script>
     // 1. ISI KONFIGURASI FIREBASE ANDA
-   const firebaseConfig = {
+    const firebaseConfig = {
   apiKey: "AIzaSyBagMqV7fs6xYqJ8c9DvLRmTxZlTY3hfDw",
   authDomain: "bobon-racing.firebaseapp.com",
   projectId: "bobon-racing",
@@ -735,25 +725,21 @@
   measurementId: "G-KJ05G2NG5D"
 };
 
-    let app, db, itemsCol, transactionsCol, mechanicsCol;
-    
-    try {
-        app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        itemsCol = collection(db, "items");
-        transactionsCol = collection(db, "transactions");
-        mechanicsCol = collection(db, "mechanics");
-        console.log("Firebase Berhasil Terhubung!");
-    } catch (err) {
-        console.error("Gagal inisialisasi Firebase:", err);
+    // Inisialisasi Firebase v8
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
     }
+    const db = firebase.firestore();
+
+    const itemsCol = db.collection("items");
+    const transactionsCol = db.collection("transactions");
+    const mechanicsCol = db.collection("mechanics");
 
     let items = [];
     let transactions = [];
     let mechanics = [];
     let currentCart = [];
 
-    // --- UTILITY ---
     function formatRupiah(number) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number || 0);
     }
@@ -770,10 +756,8 @@
         setTimeout(() => toast.classList.add('hidden'), 3000);
     }
 
-    // --- NAVIGATION ---
     function switchTab(tabName) {
-        const tabs = ['dashboard', 'pos', 'inventory', 'history', 'settings'];
-        tabs.forEach(t => {
+        ['dashboard', 'pos', 'inventory', 'history', 'settings'].forEach(t => {
             const content = document.getElementById(`tab-content-${t}`);
             const btn = document.getElementById(`nav-btn-${t}`);
             if (content) content.classList.add('hidden');
@@ -792,29 +776,26 @@
         if (tabName === 'settings') renderMechanicsList();
     }
 
-    // --- LISTENERS ---
-    if (db) {
-        onSnapshot(itemsCol, (snapshot) => {
-            items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderDashboard();
-            renderPosItemGrid();
-            renderInventoryTable();
-        });
+    // REALTIME LISTENERS V8 (Integrasi Laptop & HP Tetap Jalan)
+    itemsCol.onSnapshot((snapshot) => {
+        items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderDashboard();
+        renderPosItemGrid();
+        renderInventoryTable();
+    });
 
-        onSnapshot(transactionsCol, (snapshot) => {
-            transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderDashboard();
-            renderHistoryTab();
-        });
+    transactionsCol.onSnapshot((snapshot) => {
+        transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderDashboard();
+        renderHistoryTab();
+    });
 
-        onSnapshot(mechanicsCol, (snapshot) => {
-            mechanics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderMechanicsOptions();
-            renderMechanicsList();
-        });
-    }
+    mechanicsCol.onSnapshot((snapshot) => {
+        mechanics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderMechanicsOptions();
+        renderMechanicsList();
+    });
 
-    // --- RENDER FUNCTIONS ---
     function renderDashboard() {
         const totalItems = items.reduce((sum, item) => sum + (parseInt(item.stock) || 0), 0);
         const lowStock = items.filter(item => item.stock < 5).length;
@@ -992,18 +973,18 @@
         if (payAmount < grandTotal) { showToast('Uang Pembayaran Kurang!', 'error'); return; }
 
         try {
-            await runTransaction(db, async (transaction) => {
+            await db.runTransaction(async (transaction) => {
                 for (let cartItem of currentCart) {
-                    const itemRef = doc(db, "items", cartItem.id);
+                    const itemRef = itemsCol.doc(cartItem.id);
                     const itemDoc = await transaction.get(itemRef);
-                    if (!itemDoc.exists()) throw "Barang " + cartItem.name + " tidak ada!";
+                    if (!itemDoc.exists) throw "Barang " + cartItem.name + " tidak ada!";
                     const currentStock = itemDoc.data().stock;
                     if (currentStock < cartItem.qty) throw "Stok " + cartItem.name + " habis!";
                     transaction.update(itemRef, { stock: currentStock - cartItem.qty });
                 }
 
                 const txId = 'INV-' + Date.now().toString().slice(-6);
-                const txRef = doc(db, "transactions", txId);
+                const txRef = transactionsCol.doc(txId);
                 const newTx = { id: txId, date: new Date().toISOString(), plat, customer: customer || 'Umum', mechanic, items: [...currentCart], serviceFee, grandTotal, payAmount, change: payAmount - grandTotal };
 
                 transaction.set(txRef, newTx);
@@ -1106,10 +1087,10 @@
 
         try {
             if (id) {
-                await updateDoc(doc(db, "items", id), payload);
+                await itemsCol.doc(id).update(payload);
                 showToast('Barang Diperbarui!');
             } else {
-                await addDoc(itemsCol, payload);
+                await itemsCol.add(payload);
                 showToast('Barang Ditambahkan!');
             }
             closeItemModal();
@@ -1122,7 +1103,7 @@
     async function deleteItem(itemId) {
         if (confirm('Hapus barang ini?')) {
             try {
-                await deleteDoc(doc(db, "items", itemId));
+                await itemsCol.doc(itemId).delete();
                 showToast('Barang dihapus.');
             } catch (error) {
                 console.error(error);
@@ -1152,7 +1133,7 @@
         const item = items.find(i => i.id === itemId);
         if (item && addQty > 0) {
             try {
-                await updateDoc(doc(db, "items", itemId), { stock: item.stock + addQty });
+                await itemsCol.doc(itemId).update({ stock: item.stock + addQty });
                 showToast(`Stok +${addQty} berhasil`);
                 closeRestockModal();
             } catch (error) {
@@ -1246,7 +1227,7 @@
         if (!name) return;
 
         try {
-            await addDoc(mechanicsCol, { name: name });
+            await mechanicsCol.add({ name: name });
             input.value = '';
             showToast('Mekanik ditambahkan');
         } catch (error) {
@@ -1258,7 +1239,7 @@
     async function deleteMechanic(id) {
         if (confirm('Hapus mekanik?')) {
             try {
-                await deleteDoc(doc(db, "mechanics", id));
+                await mechanicsCol.doc(id).delete();
                 showToast('Mekanik dihapus');
             } catch (error) {
                 console.error(error);
@@ -1318,41 +1299,6 @@
     function closeReceiptModal() {
         if (document.getElementById('modal-receipt')) document.getElementById('modal-receipt').classList.add('hidden');
     }
-
-    // MAP KE WINDOW OBJECT EKSPLISIT
-    window.switchTab = switchTab;
-    window.addToCart = addToCart;
-    window.updateCartQty = updateCartQty;
-    window.removeCartItem = removeCartItem;
-    window.clearPosCart = clearPosCart;
-    window.processTransaction = processTransaction;
-    window.openItemModal = openItemModal;
-    window.closeItemModal = closeItemModal;
-    window.saveItem = saveItem;
-    window.deleteItem = deleteItem;
-    window.openRestockModal = openRestockModal;
-    window.closeRestockModal = closeRestockModal;
-    window.confirmRestock = confirmRestock;
-    window.addMechanic = addMechanic;
-    window.deleteMechanic = deleteMechanic;
-    window.reprintReceipt = reprintReceipt;
-    window.closeReceiptModal = closeReceiptModal;
-    window.calculatePosTotals = calculatePosTotals;
-
-    // EVENT LISTENER GLOBAL (MEMAKSA SEMUA TOMBOL BERFUNGSI)
-    document.addEventListener('click', (e) => {
-        const btn = e.target.closest('[onclick]');
-        if (!btn) return;
-        
-        const attr = btn.getAttribute('onclick');
-        if (attr && attr.startsWith('switchTab')) {
-            const match = attr.match(/'([^']+)'/);
-            if (match) {
-                e.preventDefault();
-                switchTab(match[1]);
-            }
-        }
-    });
 
     window.addEventListener('DOMContentLoaded', () => {
         initYearFilter();
