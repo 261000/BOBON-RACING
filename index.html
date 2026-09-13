@@ -726,14 +726,13 @@
 
     // 1. KUNCI KONFIGURASI FIREBASE ANDA
     const firebaseConfig = {
-  apiKey: "AIzaSyBagMqV7fs6xYqJ8c9DvLRmTxZlTY3hfDw",
-  authDomain: "bobon-racing.firebaseapp.com",
-  projectId: "bobon-racing",
-  storageBucket: "bobon-racing.firebasestorage.app",
-  messagingSenderId: "571633817710",
-  appId: "1:571633817710:web:6fb731c53d9360222eee7f",
-  measurementId: "G-KJ05G2NG5D"
-};
+        apiKey: "ISI_API_KEY_ANDA",
+        authDomain: "ISI_PROJECT_ID.firebaseapp.com",
+        projectId: "ISI_PROJECT_ID",
+        storageBucket: "ISI_PROJECT_ID.appspot.com",
+        messagingSenderId: "ISI_SENDER_ID",
+        appId: "ISI_APP_ID"
+    };
 
     // Inisialisasi Firebase & Firestore
     const app = initializeApp(firebaseConfig);
@@ -750,14 +749,15 @@
     let mechanics = [];
     let currentCart = [];
 
-    // Global utility function bindings to Window
-    window.formatRupiah = function(number) {
+    // --- UTILITY FUNCTIONS ---
+    function formatRupiah(number) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number);
-    };
+    }
 
-    window.showToast = function(message, type = 'success') {
+    function showToast(message, type = 'success') {
         const toast = document.getElementById('toast');
         const toastMsg = document.getElementById('toast-msg');
+        if (!toast || !toastMsg) return;
         toastMsg.innerText = message;
         if (type === 'error') {
             toast.className = "fixed bottom-5 right-5 z-50 bg-rose-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm border border-rose-400";
@@ -766,10 +766,10 @@
         }
         toast.classList.remove('hidden');
         setTimeout(() => toast.classList.add('hidden'), 3000);
-    };
+    }
 
-    // Tab Navigation
-    window.switchTab = function(tabName) {
+    // --- NAVIGATION ---
+    function switchTab(tabName) {
         ['dashboard', 'pos', 'inventory', 'history', 'settings'].forEach(t => {
             const content = document.getElementById(`tab-content-${t}`);
             const btn = document.getElementById(`nav-btn-${t}`);
@@ -787,37 +787,30 @@
         if (tabName === 'inventory') renderInventoryTable();
         if (tabName === 'history') renderHistoryTab();
         if (tabName === 'settings') renderMechanicsList();
-    };
+    }
 
-    // Initial Load & Real-Time Syncing via Firebase
-    window.addEventListener('DOMContentLoaded', () => {
-        initYearFilter();
-
-        // 1. Real-time Listener Barang (Items)
-        onSnapshot(itemsCol, (snapshot) => {
-            items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderDashboard();
-            renderPosItemGrid();
-            renderInventoryTable();
-        });
-
-        // 2. Real-time Listener Transaksi
-        onSnapshot(transactionsCol, (snapshot) => {
-            transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderDashboard();
-            renderHistoryTab();
-        });
-
-        // 3. Real-time Listener Mekanik
-        onSnapshot(mechanicsCol, (snapshot) => {
-            mechanics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderMechanicsOptions();
-            renderMechanicsList();
-        });
+    // --- REALTIME LISTENERS ---
+    onSnapshot(itemsCol, (snapshot) => {
+        items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderDashboard();
+        renderPosItemGrid();
+        renderInventoryTable();
     });
 
-    // Dashboard Rendering
-    window.renderDashboard = function() {
+    onSnapshot(transactionsCol, (snapshot) => {
+        transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderDashboard();
+        renderHistoryTab();
+    });
+
+    onSnapshot(mechanicsCol, (snapshot) => {
+        mechanics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderMechanicsOptions();
+        renderMechanicsList();
+    });
+
+    // --- DASHBOARD ---
+    function renderDashboard() {
         const totalItems = items.reduce((sum, item) => sum + (parseInt(item.stock) || 0), 0);
         const lowStock = items.filter(item => item.stock < 5).length;
         
@@ -825,24 +818,30 @@
         const todayTx = transactions.filter(t => t.date && t.date.startsWith(todayStr));
         const todayRevenue = todayTx.reduce((sum, t) => sum + (t.grandTotal || 0), 0);
 
-        document.getElementById('dash-total-items').innerText = totalItems;
-        document.getElementById('dash-low-stock').innerText = lowStock;
-        document.getElementById('dash-today-tx').innerText = todayTx.length;
-        document.getElementById('dash-today-revenue').innerText = formatRupiah(todayRevenue);
-    };
+        const elTotal = document.getElementById('dash-total-items');
+        const elLow = document.getElementById('dash-low-stock');
+        const elTx = document.getElementById('dash-today-tx');
+        const elRev = document.getElementById('dash-today-revenue');
 
-    window.renderMechanicsOptions = function() {
+        if (elTotal) elTotal.innerText = totalItems;
+        if (elLow) elLow.innerText = lowStock;
+        if (elTx) elTx.innerText = todayTx.length;
+        if (elRev) elRev.innerText = formatRupiah(todayRevenue);
+    }
+
+    function renderMechanicsOptions() {
         const select = document.getElementById('pos-mechanic');
         if (!select) return;
         select.innerHTML = '<option value="">-- Pilih Mekanik --</option>';
         mechanics.forEach(m => {
             select.innerHTML += `<option value="${m.name}">${m.name}</option>`;
         });
-    };
+    }
 
-    // POS Methods
-    window.renderPosItemGrid = function() {
+    // --- POS & CART LOGIC ---
+    function renderPosItemGrid() {
         const grid = document.getElementById('pos-item-grid');
+        if (!grid) return;
         const searchVal = (document.getElementById('pos-search')?.value || '').toLowerCase();
         grid.innerHTML = '';
 
@@ -875,9 +874,9 @@
                 </div>
             `;
         });
-    };
+    }
 
-    window.addToCart = function(itemId) {
+    function addToCart(itemId) {
         const item = items.find(i => i.id === itemId);
         if (!item || item.stock <= 0) return;
 
@@ -899,9 +898,9 @@
             });
         }
         renderCart();
-    };
+    }
 
-    window.updateCartQty = function(itemId, delta) {
+    function updateCartQty(itemId, delta) {
         const cartItem = currentCart.find(c => c.id === itemId);
         const stockItem = items.find(i => i.id === itemId);
 
@@ -918,25 +917,26 @@
             cartItem.qty = newQty;
         }
         renderCart();
-    };
+    }
 
-    window.removeCartItem = function(itemId) {
+    function removeCartItem(itemId) {
         currentCart = currentCart.filter(c => c.id !== itemId);
         renderCart();
-    };
+    }
 
-    window.clearPosCart = function() {
+    function clearPosCart() {
         currentCart = [];
-        document.getElementById('pos-plat').value = '';
-        document.getElementById('pos-customer').value = '';
-        document.getElementById('pos-mechanic').value = '';
-        document.getElementById('pos-service-fee').value = 0;
-        document.getElementById('pos-pay-amount').value = '';
+        if (document.getElementById('pos-plat')) document.getElementById('pos-plat').value = '';
+        if (document.getElementById('pos-customer')) document.getElementById('pos-customer').value = '';
+        if (document.getElementById('pos-mechanic')) document.getElementById('pos-mechanic').value = '';
+        if (document.getElementById('pos-service-fee')) document.getElementById('pos-service-fee').value = 0;
+        if (document.getElementById('pos-pay-amount')) document.getElementById('pos-pay-amount').value = '';
         renderCart();
-    };
+    }
 
-    window.renderCart = function() {
+    function renderCart() {
         const container = document.getElementById('pos-cart-items');
+        if (!container) return;
         container.innerHTML = '';
 
         if (currentCart.length === 0) {
@@ -961,31 +961,32 @@
             });
         }
         calculatePosTotals();
-    };
+    }
 
-    window.calculatePosTotals = function() {
+    function calculatePosTotals() {
         const subtotalItems = currentCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-        const serviceFee = parseFloat(document.getElementById('pos-service-fee').value) || 0;
+        const serviceFee = parseFloat(document.getElementById('pos-service-fee')?.value) || 0;
         const grandTotal = subtotalItems + serviceFee;
-        const payAmount = parseFloat(document.getElementById('pos-pay-amount').value) || 0;
+        const payAmount = parseFloat(document.getElementById('pos-pay-amount')?.value) || 0;
         const change = payAmount - grandTotal;
 
-        document.getElementById('pos-subtotal-items').innerText = formatRupiah(subtotalItems);
-        document.getElementById('pos-subtotal-service').innerText = formatRupiah(serviceFee);
-        document.getElementById('pos-grand-total').innerText = formatRupiah(grandTotal);
+        if (document.getElementById('pos-subtotal-items')) document.getElementById('pos-subtotal-items').innerText = formatRupiah(subtotalItems);
+        if (document.getElementById('pos-subtotal-service')) document.getElementById('pos-subtotal-service').innerText = formatRupiah(serviceFee);
+        if (document.getElementById('pos-grand-total')) document.getElementById('pos-grand-total').innerText = formatRupiah(grandTotal);
 
         const changeEl = document.getElementById('pos-change-amount');
-        if (change >= 0) {
-            changeEl.innerText = formatRupiah(change);
-            changeEl.className = "w-full bg-slate-900/60 border border-slate-700 rounded-xl px-3 py-2 text-base font-bold text-emerald-400 flex items-center justify-end";
-        } else {
-            changeEl.innerText = "Kurang " + formatRupiah(Math.abs(change));
-            changeEl.className = "w-full bg-slate-900/60 border border-slate-700 rounded-xl px-3 py-2 text-base font-bold text-rose-400 flex items-center justify-end text-xs";
+        if (changeEl) {
+            if (change >= 0) {
+                changeEl.innerText = formatRupiah(change);
+                changeEl.className = "w-full bg-slate-900/60 border border-slate-700 rounded-xl px-3 py-2 text-base font-bold text-emerald-400 flex items-center justify-end";
+            } else {
+                changeEl.innerText = "Kurang " + formatRupiah(Math.abs(change));
+                changeEl.className = "w-full bg-slate-900/60 border border-slate-700 rounded-xl px-3 py-2 text-base font-bold text-rose-400 flex items-center justify-end text-xs";
+            }
         }
-    };
+    }
 
-    // Firebase Atomic Transaction Logic for POS
-    window.processTransaction = async function() {
+    async function processTransaction() {
         const plat = document.getElementById('pos-plat').value.trim().toUpperCase();
         const customer = document.getElementById('pos-customer').value.trim();
         const mechanic = document.getElementById('pos-mechanic').value;
@@ -1008,7 +1009,6 @@
         }
 
         try {
-            // Gunakan Atomic Transaction Firestore untuk mengurangi stok dengan aman
             await runTransaction(db, async (transaction) => {
                 for (let cartItem of currentCart) {
                     const itemRef = doc(db, "items", cartItem.id);
@@ -1051,11 +1051,12 @@
             console.error(error);
             showToast(typeof error === 'string' ? error : 'Gagal memproses transaksi!', 'error');
         }
-    };
+    }
 
-    // Inventory Table & Modal Handlers
-    window.renderInventoryTable = function() {
+    // --- INVENTORY MANAGEMENT ---
+    function renderInventoryTable() {
         const tbody = document.getElementById('inv-table-body');
+        if (!tbody) return;
         const searchVal = (document.getElementById('inv-search')?.value || '').toLowerCase();
         const filterStock = document.getElementById('inv-filter-stock')?.value;
         tbody.innerHTML = '';
@@ -1097,12 +1098,14 @@
                 </tr>
             `;
         });
-    };
+    }
 
-    window.openItemModal = function(itemId = null) {
+    function openItemModal(itemId = null) {
         const modal = document.getElementById('modal-item');
         const form = document.getElementById('form-item');
         const title = document.getElementById('modal-item-title');
+
+        if (!modal || !form || !title) return;
 
         form.reset();
         document.getElementById('item-id').value = '';
@@ -1123,14 +1126,14 @@
         }
 
         modal.classList.remove('hidden');
-    };
+    }
 
-    window.closeItemModal = function() {
+    function closeItemModal() {
         document.getElementById('modal-item').classList.add('hidden');
-    };
+    }
 
-    window.saveItem = async function(event) {
-        event.preventDefault();
+    async function saveItem(event) {
+        if (event) event.preventDefault();
         const id = document.getElementById('item-id').value;
         const code = document.getElementById('item-code').value.trim().toUpperCase();
         const name = document.getElementById('item-name').value.trim();
@@ -1153,9 +1156,9 @@
             console.error(error);
             showToast('Gagal menyimpan data barang!', 'error');
         }
-    };
+    }
 
-    window.deleteItem = async function(itemId) {
+    async function deleteItem(itemId) {
         if (confirm('Apakah Anda yakin ingin menghapus barang ini?')) {
             try {
                 await deleteDoc(doc(db, "items", itemId));
@@ -1165,9 +1168,9 @@
                 showToast('Gagal menghapus barang!', 'error');
             }
         }
-    };
+    }
 
-    window.openRestockModal = function(itemId) {
+    function openRestockModal(itemId) {
         const item = items.find(i => i.id === itemId);
         if (!item) return;
 
@@ -1175,13 +1178,13 @@
         document.getElementById('restock-item-name').innerText = `${item.name} (${item.code}) - Stok Saat Ini: ${item.stock}`;
         document.getElementById('restock-qty').value = 5;
         document.getElementById('modal-restock').classList.remove('hidden');
-    };
+    }
 
-    window.closeRestockModal = function() {
+    function closeRestockModal() {
         document.getElementById('modal-restock').classList.add('hidden');
-    };
+    }
 
-    window.confirmRestock = async function() {
+    async function confirmRestock() {
         const itemId = document.getElementById('restock-item-id').value;
         const addQty = parseInt(document.getElementById('restock-qty').value) || 0;
 
@@ -1198,10 +1201,10 @@
                 showToast('Gagal menambah stok!', 'error');
             }
         }
-    };
+    }
 
-    // History Reports
-    window.initYearFilter = function() {
+    // --- HISTORY REPORTS ---
+    function initYearFilter() {
         const yearSelect = document.getElementById('hist-filter-year');
         if (!yearSelect) return;
         const currentYear = new Date().getFullYear();
@@ -1209,11 +1212,14 @@
         for (let y = currentYear; y >= currentYear - 3; y--) {
             yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
         }
-        document.getElementById('hist-filter-month').value = new Date().getMonth();
-    };
+        if (document.getElementById('hist-filter-month')) {
+            document.getElementById('hist-filter-month').value = new Date().getMonth();
+        }
+    }
 
-    window.renderHistoryTab = function() {
+    function renderHistoryTab() {
         const tbody = document.getElementById('hist-table-body');
+        if (!tbody) return;
         const selectedMonth = parseInt(document.getElementById('hist-filter-month')?.value);
         const selectedYear = parseInt(document.getElementById('hist-filter-year')?.value);
         const searchVal = (document.getElementById('hist-search')?.value || '').toLowerCase();
@@ -1229,8 +1235,8 @@
         }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
         const totalRevenue = filtered.reduce((sum, t) => sum + t.grandTotal, 0);
-        document.getElementById('hist-total-revenue').innerText = formatRupiah(totalRevenue);
-        document.getElementById('hist-total-count').innerText = filtered.length;
+        if (document.getElementById('hist-total-revenue')) document.getElementById('hist-total-revenue').innerText = formatRupiah(totalRevenue);
+        if (document.getElementById('hist-total-count')) document.getElementById('hist-total-count').innerText = filtered.length;
 
         if (filtered.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-500">Tidak ada transaksi ditemukan pada periode ini.</td></tr>`;
@@ -1263,10 +1269,10 @@
                 </tr>
             `;
         });
-    };
+    }
 
-    // Mechanic Master Data Handlers
-    window.renderMechanicsList = function() {
+    // --- MECHANIC MASTER DATA ---
+    function renderMechanicsList() {
         const container = document.getElementById('mechanic-list-container');
         if (!container) return;
         container.innerHTML = '';
@@ -1281,9 +1287,9 @@
                 </div>
             `;
         });
-    };
+    }
 
-    window.addMechanic = async function() {
+    async function addMechanic() {
         const input = document.getElementById('new-mechanic-name');
         const name = input.value.trim();
         if (!name) return;
@@ -1296,9 +1302,9 @@
             console.error(error);
             showToast('Gagal menambahkan mekanik!', 'error');
         }
-    };
+    }
 
-    window.deleteMechanic = async function(id) {
+    async function deleteMechanic(id) {
         if (confirm('Hapus mekanik ini?')) {
             try {
                 await deleteDoc(doc(db, "mechanics", id));
@@ -1308,60 +1314,101 @@
                 showToast('Gagal menghapus mekanik!', 'error');
             }
         }
-    };
+    }
 
-    // Receipt Printing Logic
-    window.openReceiptModal = function(tx) {
-        document.getElementById('rec-date').innerText = new Date(tx.date).toLocaleString('id-ID');
-        document.getElementById('rec-id').innerText = tx.id;
-        document.getElementById('rec-plat').innerText = tx.plat;
-        document.getElementById('rec-customer').innerText = tx.customer;
-        document.getElementById('rec-mechanic').innerText = tx.mechanic;
+    // --- RECEIPT PRINTING ---
+    function openReceiptModal(tx) {
+        if (document.getElementById('rec-date')) document.getElementById('rec-date').innerText = new Date(tx.date).toLocaleString('id-ID');
+        if (document.getElementById('rec-id')) document.getElementById('rec-id').innerText = tx.id;
+        if (document.getElementById('rec-plat')) document.getElementById('rec-plat').innerText = tx.plat;
+        if (document.getElementById('rec-customer')) document.getElementById('rec-customer').innerText = tx.customer;
+        if (document.getElementById('rec-mechanic')) document.getElementById('rec-mechanic').innerText = tx.mechanic;
 
         const itemsContainer = document.getElementById('rec-items-list');
-        itemsContainer.innerHTML = '';
+        if (itemsContainer) {
+            itemsContainer.innerHTML = '';
 
-        if (tx.items) {
-            tx.items.forEach(i => {
+            if (tx.items) {
+                tx.items.forEach(i => {
+                    itemsContainer.innerHTML += `
+                        <div>
+                            <div class="font-semibold">${i.name}</div>
+                            <div class="flex justify-between text-slate-600">
+                                <span>${i.qty} x ${formatRupiah(i.price)}</span>
+                                <span>${formatRupiah(i.qty * i.price)}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (tx.serviceFee > 0) {
                 itemsContainer.innerHTML += `
                     <div>
-                        <div class="font-semibold">${i.name}</div>
+                        <div class="font-semibold">Ongkos Jasa Servis</div>
                         <div class="flex justify-between text-slate-600">
-                            <span>${i.qty} x ${formatRupiah(i.price)}</span>
-                            <span>${formatRupiah(i.qty * i.price)}</span>
+                            <span>1 x ${formatRupiah(tx.serviceFee)}</span>
+                            <span>${formatRupiah(tx.serviceFee)}</span>
                         </div>
                     </div>
                 `;
-            });
+            }
         }
 
-        if (tx.serviceFee > 0) {
-            itemsContainer.innerHTML += `
-                <div>
-                    <div class="font-semibold">Ongkos Jasa Servis</div>
-                    <div class="flex justify-between text-slate-600">
-                        <span>1 x ${formatRupiah(tx.serviceFee)}</span>
-                        <span>${formatRupiah(tx.serviceFee)}</span>
-                    </div>
-                </div>
-            `;
-        }
+        if (document.getElementById('rec-total')) document.getElementById('rec-total').innerText = formatRupiah(tx.grandTotal);
+        if (document.getElementById('rec-pay')) document.getElementById('rec-pay').innerText = formatRupiah(tx.payAmount);
+        if (document.getElementById('rec-change')) document.getElementById('rec-change').innerText = formatRupiah(tx.change);
 
-        document.getElementById('rec-total').innerText = formatRupiah(tx.grandTotal);
-        document.getElementById('rec-pay').innerText = formatRupiah(tx.payAmount);
-        document.getElementById('rec-change').innerText = formatRupiah(tx.change);
+        if (document.getElementById('modal-receipt')) document.getElementById('modal-receipt').classList.remove('hidden');
+    }
 
-        document.getElementById('modal-receipt').classList.remove('hidden');
-    };
-
-    window.reprintReceipt = function(txId) {
+    function reprintReceipt(txId) {
         const tx = transactions.find(t => t.id === txId);
         if (tx) openReceiptModal(tx);
-    };
+    }
 
-    window.closeReceiptModal = function() {
-        document.getElementById('modal-receipt').classList.add('hidden');
-    };
+    function closeReceiptModal() {
+        if (document.getElementById('modal-receipt')) document.getElementById('modal-receipt').classList.add('hidden');
+    }
+
+    // --- EXPOSE ALL FUNCTIONS TO WINDOW SCOPE ---
+    // (Ini adalah bagian krusial agar atribut onclick="..." di HTML dapat memanggil fungsi di atas)
+    Object.assign(window, {
+        formatRupiah,
+        showToast,
+        switchTab,
+        renderDashboard,
+        renderMechanicsOptions,
+        renderPosItemGrid,
+        addToCart,
+        updateCartQty,
+        removeCartItem,
+        clearPosCart,
+        renderCart,
+        calculatePosTotals,
+        processTransaction,
+        renderInventoryTable,
+        openItemModal,
+        closeItemModal,
+        saveItem,
+        deleteItem,
+        openRestockModal,
+        closeRestockModal,
+        confirmRestock,
+        initYearFilter,
+        renderHistoryTab,
+        renderMechanicsList,
+        addMechanic,
+        deleteMechanic,
+        openReceiptModal,
+        reprintReceipt,
+        closeReceiptModal
+    });
+
+    // Inisialisasi awal saat halaman selesai dimuat
+    window.addEventListener('DOMContentLoaded', () => {
+        initYearFilter();
+    });
 </script>
     
 </body>
