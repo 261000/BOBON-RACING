@@ -814,7 +814,7 @@
         }, err => console.error("Error mechanics:", err));
     }
 
-    // --- DASHBOARD ---
+    // --- DASHBOARD (SUDAH DIPERBAIKI / SAFE CHECK) ---
     function renderDashboard() {
         const totalItems = items.reduce((sum, item) => sum + (parseInt(item.stock) || 0), 0);
         const lowStock = items.filter(item => item.stock < 5).length;
@@ -822,10 +822,16 @@
         const todayTx = transactions.filter(t => t.date && t.date.startsWith(todayStr));
         const todayRevenue = todayTx.reduce((sum, t) => sum + (t.grandTotal || 0), 0);
 
-        if (document.getElementById('dash-total-items')) document.getElementById('dash-total-items').innerText = totalItems;
-        if (document.getElementById('dash-low-stock')) document.getElementById('dash-low-stock').innerText = lowStock;
-        if (document.getElementById('dash-today-tx')) document.getElementById('dash-today-tx').innerText = todayTx.length;
-        if (document.getElementById('dash-today-revenue')) document.getElementById('dash-today-revenue').innerText = formatRupiah(todayRevenue);
+        // Menggunakan opsi pengecekan aman (Optional Chaining)
+        const elTotal = document.getElementById('dash-total-items');
+        const elLow = document.getElementById('dash-low-stock');
+        const elTx = document.getElementById('dash-today-tx');
+        const elRev = document.getElementById('dash-today-revenue');
+
+        if (elTotal) elTotal.innerText = totalItems;
+        if (elLow) elLow.innerText = lowStock;
+        if (elTx) elTx.innerText = todayTx.length;
+        if (elRev) elRev.innerText = formatRupiah(todayRevenue);
     }
 
     function renderMechanicsOptions() {
