@@ -35,46 +35,6 @@
         }
     </script>
 
-    <!-- Firebase SDK (v10.8.0) -->
-    <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-      getFirestore, 
-      collection, 
-      doc, 
-      onSnapshot, 
-      setDoc, 
-      addDoc, 
-      updateDoc, 
-      deleteDoc,
-      query,
-      orderBy 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    // =========================================================================
-    // ⚠️ MASUKKAN KODE FIREBASE CONFIG ANDA DI BAWAH INI (DARI PROJECT SETTINGS)
-    // =========================================================================
-const firebaseConfig = {
-  apiKey: "AIzaSyBagMqV7fs6xYqJ8c9DvLRmTxZlTY3hfDw",
-  authDomain: "bobon-racing.firebaseapp.com",
-  projectId: "bobon-racing",
-  storageBucket: "bobon-racing.firebasestorage.app",
-  messagingSenderId: "571633817710",
-  appId: "1:571633817710:web:6fb731c53d9360222eee7f",
-  measurementId: "G-KJ05G2NG5D"
-};
-
-    // Inisialisasi Firebase & Firestore
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Global State
-    window.db = db;
-    window.firestoreModule = {
-      collection, doc, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy
-    };
-  </script>
-
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -131,7 +91,7 @@ const firebaseConfig = {
                     </div>
                     <div>
                         <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                            Bengkel<span class="text-rose-500">POS</span>
+                            BOBON<span class="text-rose-500">RACING</span>
                             <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-700 text-rose-400 border border-slate-600">No Backend</span>
                         </h1>
                         <p class="text-xs text-slate-400 hidden sm:block">Sistem Kasir & Control Stok Bengkel Motor</p>
@@ -1497,5 +1457,30 @@ const firebaseConfig = {
             document.getElementById('modal-receipt').classList.add('hidden');
         }
     </script>
+
+    <!-- Firebase SDK Modular -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+        getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, writeBatch 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Tempelkan konfigurasi Firebase Anda di sini
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Hubungkan fungsi simpan/tampil data Anda di sini
+</script>
+    
 </body>
 </html>
