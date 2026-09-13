@@ -709,7 +709,8 @@
         </div>
     </div>
 
-   <script type="module">
+   <!-- Import Firebase SDK v9+ -->
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
         getFirestore, 
@@ -723,7 +724,7 @@
         runTransaction 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // PASTIKAN INI SUDAH DIGANTI DENGAN KUNCI FIREBASE ASLI ANDA
+    // 1. ISI KONFIGURASI FIREBASE ANDA
    const firebaseConfig = {
   apiKey: "AIzaSyBagMqV7fs6xYqJ8c9DvLRmTxZlTY3hfDw",
   authDomain: "bobon-racing.firebaseapp.com",
@@ -734,16 +735,17 @@
   measurementId: "G-KJ05G2NG5D"
 };
 
-    // Inisialisasi Firebase
     let app, db, itemsCol, transactionsCol, mechanicsCol;
+    
     try {
         app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         itemsCol = collection(db, "items");
         transactionsCol = collection(db, "transactions");
         mechanicsCol = collection(db, "mechanics");
-    } catch (e) {
-        console.error("Gagal konek Firebase. Cek firebaseConfig Anda!", e);
+        console.log("Firebase Berhasil Terhubung!");
+    } catch (err) {
+        console.error("Gagal inisialisasi Firebase:", err);
     }
 
     let items = [];
@@ -751,6 +753,7 @@
     let mechanics = [];
     let currentCart = [];
 
+    // --- UTILITY ---
     function formatRupiah(number) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number || 0);
     }
@@ -767,11 +770,9 @@
         setTimeout(() => toast.classList.add('hidden'), 3000);
     }
 
-    // --- PENGALIHAN TAB (DILINDUNGI SAFE CHECK) ---
+    // --- NAVIGATION ---
     function switchTab(tabName) {
-        console.log("Mencoba pindah tab ke:", tabName);
         const tabs = ['dashboard', 'pos', 'inventory', 'history', 'settings'];
-        
         tabs.forEach(t => {
             const content = document.getElementById(`tab-content-${t}`);
             const btn = document.getElementById(`nav-btn-${t}`);
@@ -781,7 +782,6 @@
 
         const activeContent = document.getElementById(`tab-content-${tabName}`);
         const activeBtn = document.getElementById(`nav-btn-${tabName}`);
-        
         if (activeContent) activeContent.classList.remove('hidden');
         if (activeBtn) activeBtn.className = "w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center space-x-3 bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg shadow-rose-900/30 font-semibold";
 
@@ -792,29 +792,29 @@
         if (tabName === 'settings') renderMechanicsList();
     }
 
-    // --- REALTIME LISTENERS ---
+    // --- LISTENERS ---
     if (db) {
         onSnapshot(itemsCol, (snapshot) => {
             items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderDashboard();
             renderPosItemGrid();
             renderInventoryTable();
-        }, err => console.error("Error items:", err));
+        });
 
         onSnapshot(transactionsCol, (snapshot) => {
             transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderDashboard();
             renderHistoryTab();
-        }, err => console.error("Error tx:", err));
+        });
 
         onSnapshot(mechanicsCol, (snapshot) => {
             mechanics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderMechanicsOptions();
             renderMechanicsList();
-        }, err => console.error("Error mechanics:", err));
+        });
     }
 
-    // --- DASHBOARD (SUDAH DIPERBAIKI / SAFE CHECK) ---
+    // --- RENDER FUNCTIONS ---
     function renderDashboard() {
         const totalItems = items.reduce((sum, item) => sum + (parseInt(item.stock) || 0), 0);
         const lowStock = items.filter(item => item.stock < 5).length;
@@ -822,16 +822,10 @@
         const todayTx = transactions.filter(t => t.date && t.date.startsWith(todayStr));
         const todayRevenue = todayTx.reduce((sum, t) => sum + (t.grandTotal || 0), 0);
 
-        // Menggunakan opsi pengecekan aman (Optional Chaining)
-        const elTotal = document.getElementById('dash-total-items');
-        const elLow = document.getElementById('dash-low-stock');
-        const elTx = document.getElementById('dash-today-tx');
-        const elRev = document.getElementById('dash-today-revenue');
-
-        if (elTotal) elTotal.innerText = totalItems;
-        if (elLow) elLow.innerText = lowStock;
-        if (elTx) elTx.innerText = todayTx.length;
-        if (elRev) elRev.innerText = formatRupiah(todayRevenue);
+        if (document.getElementById('dash-total-items')) document.getElementById('dash-total-items').innerText = totalItems;
+        if (document.getElementById('dash-low-stock')) document.getElementById('dash-low-stock').innerText = lowStock;
+        if (document.getElementById('dash-today-tx')) document.getElementById('dash-today-tx').innerText = todayTx.length;
+        if (document.getElementById('dash-today-revenue')) document.getElementById('dash-today-revenue').innerText = formatRupiah(todayRevenue);
     }
 
     function renderMechanicsOptions() {
@@ -843,7 +837,6 @@
         });
     }
 
-    // --- POS GRID & CART ---
     function renderPosItemGrid() {
         const grid = document.getElementById('pos-item-grid');
         if (!grid) return;
@@ -1025,7 +1018,6 @@
         }
     }
 
-    // --- INVENTORY ---
     function renderInventoryTable() {
         const tbody = document.getElementById('inv-table-body');
         if (!tbody) return;
@@ -1170,7 +1162,6 @@
         }
     }
 
-    // --- HISTORY ---
     function initYearFilter() {
         const yearSelect = document.getElementById('hist-filter-year');
         if (!yearSelect) return;
@@ -1234,7 +1225,6 @@
         });
     }
 
-    // --- MECHANICS ---
     function renderMechanicsList() {
         const container = document.getElementById('mechanic-list-container');
         if (!container) return;
@@ -1277,7 +1267,6 @@
         }
     }
 
-    // --- RECEIPT ---
     function openReceiptModal(tx) {
         if (document.getElementById('rec-date')) document.getElementById('rec-date').innerText = new Date(tx.date).toLocaleString('id-ID');
         if (document.getElementById('rec-id')) document.getElementById('rec-id').innerText = tx.id;
@@ -1330,15 +1319,39 @@
         if (document.getElementById('modal-receipt')) document.getElementById('modal-receipt').classList.add('hidden');
     }
 
-    // MELEKATKAN SEMUA FUNGSI KE OBJ WINDOW
-    Object.assign(window, {
-        formatRupiah, showToast, switchTab, renderDashboard, renderMechanicsOptions,
-        renderPosItemGrid, addToCart, updateCartQty, removeCartItem, clearPosCart,
-        renderCart, calculatePosTotals, processTransaction, renderInventoryTable,
-        openItemModal, closeItemModal, saveItem, deleteItem, openRestockModal,
-        closeRestockModal, confirmRestock, initYearFilter, renderHistoryTab,
-        renderMechanicsList, addMechanic, deleteMechanic, openReceiptModal,
-        reprintReceipt, closeReceiptModal
+    // MAP KE WINDOW OBJECT EKSPLISIT
+    window.switchTab = switchTab;
+    window.addToCart = addToCart;
+    window.updateCartQty = updateCartQty;
+    window.removeCartItem = removeCartItem;
+    window.clearPosCart = clearPosCart;
+    window.processTransaction = processTransaction;
+    window.openItemModal = openItemModal;
+    window.closeItemModal = closeItemModal;
+    window.saveItem = saveItem;
+    window.deleteItem = deleteItem;
+    window.openRestockModal = openRestockModal;
+    window.closeRestockModal = closeRestockModal;
+    window.confirmRestock = confirmRestock;
+    window.addMechanic = addMechanic;
+    window.deleteMechanic = deleteMechanic;
+    window.reprintReceipt = reprintReceipt;
+    window.closeReceiptModal = closeReceiptModal;
+    window.calculatePosTotals = calculatePosTotals;
+
+    // EVENT LISTENER GLOBAL (MEMAKSA SEMUA TOMBOL BERFUNGSI)
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[onclick]');
+        if (!btn) return;
+        
+        const attr = btn.getAttribute('onclick');
+        if (attr && attr.startsWith('switchTab')) {
+            const match = attr.match(/'([^']+)'/);
+            if (match) {
+                e.preventDefault();
+                switchTab(match[1]);
+            }
+        }
     });
 
     window.addEventListener('DOMContentLoaded', () => {
