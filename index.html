@@ -91,7 +91,7 @@
                     </div>
                     <div>
                         <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                            BOBON<span class="text-rose-500">RACING</span>
+                            Bengkel<span class="text-rose-500">POS</span>
                             <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-700 text-rose-400 border border-slate-600">No Backend</span>
                         </h1>
                         <p class="text-xs text-slate-400 hidden sm:block">Sistem Kasir & Control Stok Bengkel Motor</p>
@@ -1457,30 +1457,5 @@
             document.getElementById('modal-receipt').classList.add('hidden');
         }
     </script>
-
-    <!-- Firebase SDK Modular -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-        getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, writeBatch 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    // Tempelkan konfigurasi Firebase Anda di sini
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT_ID.appspot.com",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Hubungkan fungsi simpan/tampil data Anda di sini
-</script>
-    
 </body>
 </html>
