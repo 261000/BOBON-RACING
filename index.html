@@ -1488,11 +1488,6 @@
 </script>
 
     <script>
-    // Variabel Penampung Data Lokal
-    let items = [];
-    let transactions = [];
-    let mechanics = [];
-
     // --- SINKRONISASI REAL-TIME BARANG ---
     itemsCol.onSnapshot((snapshot) => {
         items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
