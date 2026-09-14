@@ -1252,16 +1252,20 @@
             const stock = parseInt(document.getElementById('item-stock').value) || 0;
 
             if (id) {
-                const index = items.findIndex(i => i.id === id);
-                if (index !== -1) {
-                    items[index] = { ...items[index], code, name, cost, price, stock };
-                    showToast('Barang berhasil diperbarui!');
-                }
-            } else {
-                const newId = Date.now().toString();
-                items.push({ id: newId, code, name, cost, price, stock });
-                showToast('Barang baru berhasil ditambahkan!');
-            }
+    // 1. UPDATE BARANG LAMA KE CLOUD FIREBASE
+    itemsCol.doc(id).update({ code, name, cost, price, stock })
+        .then(() => {
+            showToast('Barang berhasil diperbarui!');
+        })
+        .catch(err => console.error("Gagal update:", err));
+} else {
+    // 2. TAMBAH BARANG BARU KE CLOUD FIREBASE
+    itemsCol.add({ code, name, cost, price, stock, createdAt: new Date() })
+        .then(() => {
+            showToast('Barang baru berhasil ditambahkan!');
+        })
+        .catch(err => console.error("Gagal tambah:", err));
+}
 
             saveData();
             closeItemModal();
