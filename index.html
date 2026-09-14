@@ -1242,31 +1242,46 @@
             document.getElementById('modal-item').classList.add('hidden');
         }
 
-        function saveItem(event) {
-            event.preventDefault();
-            const id = document.getElementById('item-id').value;
-            const code = document.getElementById('item-code').value.trim().toUpperCase();
-            const name = document.getElementById('item-name').value.trim();
-            const cost = parseFloat(document.getElementById('item-cost').value) || 0;
-            const price = parseFloat(document.getElementById('item-price').value) || 0;
-            const stock = parseInt(document.getElementById('item-stock').value) || 0;
+        async function saveItem(event) {
+    // 1. Matikan auto-refresh browser
+    if (event) event.preventDefault();
 
-            if (id) {
-    // 1. UPDATE BARANG LAMA KE CLOUD FIREBASE
-    itemsCol.doc(id).update({ code, name, cost, price, stock })
-        .then(() => {
-            showToast('Barang berhasil diperbarui!');
-        })
-        .catch(err => console.error("Gagal update:", err));
-} else {
-    // 2. TAMBAH BARANG BARU KE CLOUD FIREBASE
-    itemsCol.add({ code, name, cost, price, stock, createdAt: new Date() })
-        .then(() => {
-            showToast('Barang baru berhasil ditambahkan!');
-        })
-        .catch(err => console.error("Gagal tambah:", err));
+    // 2. Ambil ID barang (jika sedang mode edit)
+    const id = document.getElementById('item-id')?.value || '';
+
+    // 3. Ambil nilai dari input HTML (gunakan fallback sesuai ID input Anda)
+    const code = document.getElementById('item-code')?.value || '';
+    const name = document.getElementById('item-name')?.value || '';
+    const cost = parseFloat(document.getElementById('item-cost')?.value) || 0;
+    const price = parseFloat(document.getElementById('item-price')?.value) || 0;
+    const stock = parseInt(document.getElementById('item-stock')?.value) || 0;
+
+    // Validasi sederhana
+    if (!name) {
+        alert("Nama barang tidak boleh kosong!");
+        return;
+    }
+
+    try {
+        if (id) {
+            // UPDATE BARANG LAMA KE CLOUD FIREBASE
+            await itemsCol.doc(id).update({ code, name, cost, price, stock });
+            if (typeof showToast === 'function') showToast('Barang berhasil diperbarui!');
+        } else {
+            // TAMBAH BARANG BARU KE CLOUD FIREBASE
+            await itemsCol.add({ code, name, cost, price, stock, createdAt: new Date() });
+            if (typeof showToast === 'function') showToast('Barang baru berhasil ditambahkan!');
+        }
+
+        // Reset nilai input ID & tutup modal jika ada
+        if (document.getElementById('item-id')) document.getElementById('item-id').value = '';
+        if (typeof closeItemModal === 'function') closeItemModal();
+
+    } catch (err) {
+        console.error("Gagal simpan ke Cloud:", err);
+        alert("Gagal menyimpan data: " + err.message);
+    }
 }
-
             saveData();
             closeItemModal();
             renderInventoryTable();
