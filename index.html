@@ -1479,6 +1479,12 @@
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
+    const db = firebase.firestore();
+
+    // Buat referensi tabel database
+    const itemsCol = db.collection("items");
+    const transactionsCol = db.collection("transactions");
+    const mechanicsCol = db.collection("mechanics");
 </script>
 
     <script>
