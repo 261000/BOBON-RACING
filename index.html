@@ -1242,52 +1242,44 @@
             document.getElementById('modal-item').classList.add('hidden');
         }
 
-        async function saveItem(event) {
-    // 1. Matikan auto-refresh browser
-    if (event) event.preventDefault();
+        // --- FUNGSI SIMPAN BARANG KE CLOUD FIREBASE ---
+async function saveItem(event) {
+    if (event) event.preventDefault(); // Mencegah browser auto-refresh
 
-    // 2. Ambil ID barang (jika sedang mode edit)
+    // 1. Ambil ID & input dari HTML
     const id = document.getElementById('item-id')?.value || '';
-
-    // 3. Ambil nilai dari input HTML (gunakan fallback sesuai ID input Anda)
     const code = document.getElementById('item-code')?.value || '';
     const name = document.getElementById('item-name')?.value || '';
     const cost = parseFloat(document.getElementById('item-cost')?.value) || 0;
     const price = parseFloat(document.getElementById('item-price')?.value) || 0;
     const stock = parseInt(document.getElementById('item-stock')?.value) || 0;
 
-    // Validasi sederhana
     if (!name) {
-        alert("Nama barang tidak boleh kosong!");
+        alert("Nama barang wajib diisi!");
         return;
     }
 
     try {
         if (id) {
-            // UPDATE BARANG LAMA KE CLOUD FIREBASE
+            // Update data ke Firestore
             await itemsCol.doc(id).update({ code, name, cost, price, stock });
             if (typeof showToast === 'function') showToast('Barang berhasil diperbarui!');
         } else {
-            // TAMBAH BARANG BARU KE CLOUD FIREBASE
+            // Tambah data baru ke Firestore
             await itemsCol.add({ code, name, cost, price, stock, createdAt: new Date() });
             if (typeof showToast === 'function') showToast('Barang baru berhasil ditambahkan!');
         }
 
-        // Reset nilai input ID & tutup modal jika ada
+        // Reset form & tutup modal
         if (document.getElementById('item-id')) document.getElementById('item-id').value = '';
+        if (document.getElementById('item-name')) document.getElementById('item-name').value = '';
         if (typeof closeItemModal === 'function') closeItemModal();
 
-    } catch (err) {
-        console.error("Gagal simpan ke Cloud:", err);
-        alert("Gagal menyimpan data: " + err.message);
+    } catch (error) {
+        console.error("Gagal simpan ke Firebase:", error);
+        alert("Gagal menyimpan data: " + error.message);
     }
-
-            saveData();
-            closeItemModal();
-            renderInventoryTable();
-            renderPosItemGrid();
-        }
-
+}
         function deleteItem(itemId) {
             if (confirm('Apakah Anda yakin ingin menghapus barang ini?')) {
                 items = items.filter(i => i.id !== itemId);
