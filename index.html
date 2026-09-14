@@ -78,6 +78,11 @@
             }
         }
     </style>
+
+    <!-- Load Firebase SDK v8 (Sangat Stabil untuk HTML Polos) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
 </head>
 <body class="min-h-screen flex flex-col antialiased bg-slate-900 text-slate-100">
 
@@ -1457,5 +1462,64 @@
             document.getElementById('modal-receipt').classList.add('hidden');
         }
     </script>
+
+    <script>
+    // 1. Masukkan Config Firebase Anda di sini
+    const firebaseConfig = {
+  apiKey: "AIzaSyBagMqV7fs6xYqJ8c9DvLRmTxZlTY3hfDw",
+  authDomain: "bobon-racing.firebaseapp.com",
+  projectId: "bobon-racing",
+  storageBucket: "bobon-racing.firebasestorage.app",
+  messagingSenderId: "571633817710",
+  appId: "1:571633817710:web:6fb731c53d9360222eee7f",
+  measurementId: "G-KJ05G2NG5D"
+};
+
+    // Inisialisasi Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    // Buat referensi tabel database
+    const itemsCol = db.collection("items");
+    const transactionsCol = db.collection("transactions");
+    const mechanicsCol = db.collection("mechanics");
+</script>
+
+    <script>
+    // Variabel Penampung Data Lokal
+    let items = [];
+    let transactions = [];
+    let mechanics = [];
+
+    // --- SINKRONISASI REAL-TIME BARANG ---
+    itemsCol.onSnapshot((snapshot) => {
+        items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log("Data barang terupdate otomatis dari cloud!", items);
+        
+        // Panggil fungsi tampilkan data Anda jika ada
+        if (typeof renderDashboard === 'function') renderDashboard();
+        if (typeof renderPosItemGrid === 'function') renderPosItemGrid();
+        if (typeof renderInventoryTable === 'function') renderInventoryTable();
+    }, (error) => {
+        console.error("Gagal konek Firestore (Barang):", error);
+    });
+
+    // --- SINKRONISASI REAL-TIME TRANSAKSI ---
+    transactionsCol.onSnapshot((snapshot) => {
+        transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (typeof renderDashboard === 'function') renderDashboard();
+        if (typeof renderHistoryTab === 'function') renderHistoryTab();
+    });
+
+    // --- SINKRONISASI REAL-TIME MEKANIK ---
+    mechanicsCol.onSnapshot((snapshot) => {
+        mechanics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (typeof renderMechanicsOptions === 'function') renderMechanicsOptions();
+        if (typeof renderMechanicsList === 'function') renderMechanicsList();
+    });
+</script>
+    
 </body>
 </html>
