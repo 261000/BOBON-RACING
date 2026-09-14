@@ -1498,36 +1498,72 @@ async function saveItem(event) {
     const mechanicsCol = db.collection("mechanics");
 </script>
 
-   <script>
-    // --- SINKRONISASI REAL-TIME BARANG ---
-    itemsCol.onSnapshot((snapshot) => {
-        // Mengisi variabel items yang sudah ada tanpa mendeklarasikan ulang
-        items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log("Data barang terupdate otomatis dari cloud!", items);
-        
-        // Panggil fungsi tampilan
-        if (typeof renderDashboard === 'function') renderDashboard();
-        if (typeof renderPosItemGrid === 'function') renderPosItemGrid();
-        if (typeof renderInventoryTable === 'function') renderInventoryTable();
-    }, (error) => {
-        console.error("Gagal konek Firestore (Barang):", error);
-    });
+<!-- SKRIP SINKRONISASI & PENGELOLAAN FIRESTORE (VERSI BERSIH & RAPI) -->
+<script>
+    // 1. SINKRONISASI REAL-TIME CLOUD (HP & LAPTOP)
+    if (typeof itemsCol !== 'undefined') {
+        itemsCol.onSnapshot((snapshot) => {
+            items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log("Data barang terupdate otomatis dari cloud!", items);
+            
+            if (typeof renderDashboard === 'function') renderDashboard();
+            if (typeof renderPosItemGrid === 'function') renderPosItemGrid();
+            if (typeof renderInventoryTable === 'function') renderInventoryTable();
+        }, (error) => {
+            console.error("Gagal konek Firestore (Barang):", error);
+        });
+    }
 
-    // --- SINKRONISASI REAL-TIME TRANSAKSI ---
-    transactionsCol.onSnapshot((snapshot) => {
-        transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        if (typeof renderDashboard === 'function') renderDashboard();
-        if (typeof renderHistoryTab === 'function') renderHistoryTab();
-    });
+    if (typeof transactionsCol !== 'undefined') {
+        transactionsCol.onSnapshot((snapshot) => {
+            transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (typeof renderDashboard === 'function') renderDashboard();
+            if (typeof renderHistoryTab === 'function') renderHistoryTab();
+        });
+    }
 
-    // --- SINKRONISASI REAL-TIME MEKANIK ---
-    mechanicsCol.onSnapshot((snapshot) => {
-        mechanics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        if (typeof renderMechanicsOptions === 'function') renderMechanicsOptions();
-        if (typeof renderMechanicsList === 'function') renderMechanicsList();
-    });
-       }
+    if (typeof mechanicsCol !== 'undefined') {
+        mechanicsCol.onSnapshot((snapshot) => {
+            mechanics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (typeof renderMechanicsOptions === 'function') renderMechanicsOptions();
+            if (typeof renderMechanicsList === 'function') renderMechanicsList();
+        });
+    }
+
+    // 2. FUNGSI SIMPAN BARANG (SINKRON KE FIRESTORE)
+    async function saveItem(event) {
+        if (event) event.preventDefault();
+
+        const id = document.getElementById('item-id')?.value || '';
+        const code = document.getElementById('item-code')?.value || '';
+        const name = document.getElementById('item-name')?.value || '';
+        const cost = parseFloat(document.getElementById('item-cost')?.value) || 0;
+        const price = parseFloat(document.getElementById('item-price')?.value) || 0;
+        const stock = parseInt(document.getElementById('item-stock')?.value) || 0;
+
+        if (!name) {
+            alert("Nama barang wajib diisi!");
+            return;
+        }
+
+        try {
+            if (id) {
+                await itemsCol.doc(id).update({ code, name, cost, price, stock });
+                if (typeof showToast === 'function') showToast('Barang berhasil diperbarui!');
+            } else {
+                await itemsCol.add({ code, name, cost, price, stock, createdAt: new Date() });
+                if (typeof showToast === 'function') showToast('Barang baru berhasil ditambahkan!');
+            }
+
+            if (document.getElementById('item-id')) document.getElementById('item-id').value = '';
+            if (document.getElementById('item-name')) document.getElementById('item-name').value = '';
+            if (typeof closeItemModal === 'function') closeItemModal();
+
+        } catch (error) {
+            console.error("Gagal simpan ke Firebase:", error);
+            alert("Gagal simpan: " + error.message);
+        }
+    }
 </script>
-    
 </body>
 </html>
