@@ -1279,7 +1279,7 @@ async function saveItem(event) {
         console.error("Gagal simpan ke Firebase:", error);
         alert("Gagal menyimpan data: " + error.message);
     }
-}
+
         function deleteItem(itemId) {
             if (confirm('Apakah Anda yakin ingin menghapus barang ini?')) {
                 items = items.filter(i => i.id !== itemId);
