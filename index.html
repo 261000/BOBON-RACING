@@ -1487,14 +1487,14 @@
     const mechanicsCol = db.collection("mechanics");
 </script>
 
-    <script>
-    
+   <script>
     // --- SINKRONISASI REAL-TIME BARANG ---
     itemsCol.onSnapshot((snapshot) => {
+        // Mengisi variabel items yang sudah ada tanpa mendeklarasikan ulang
         items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         console.log("Data barang terupdate otomatis dari cloud!", items);
         
-        // Panggil fungsi tampilkan data Anda jika ada
+        // Panggil fungsi tampilan
         if (typeof renderDashboard === 'function') renderDashboard();
         if (typeof renderPosItemGrid === 'function') renderPosItemGrid();
         if (typeof renderInventoryTable === 'function') renderInventoryTable();
